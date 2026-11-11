@@ -18,4 +18,5 @@ catálogo de 64 fuentes, hallazgos, informe (.txt, CSV, PDF) y expedientes local
 Itinerarios de vuelos (requieren API de pago o con clave), cámaras (solo enlaces oficiales), alertas oficiales automáticas.
 
 ## Investigar en mis fuentes
-El botón "Investigar en mis fuentes (site:)" busca el nombre en cada portal del catálogo con DuckDuckGo/Bing a través de proxies CORS de terceros (allorigins, corsproxy). Devuelve páginas indexadas, no consultas directas; las búsquedas pasan por esos terceros.
+Usa Serper (resultados de Google) con tu propia clave gratuita de serper.dev, pegada en Ajustes. Busca el nombre dentro de los dominios del catálogo con `site:`. Devuelve páginas indexadas, no consultas directas. La clave queda en el navegador.
+Sin clave, cada fuente del catálogo abre igualmente una búsqueda dirigida (en su buscador o con Google `site:`).
