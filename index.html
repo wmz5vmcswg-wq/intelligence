@@ -41,6 +41,15 @@ pre{white-space:pre-wrap;word-break:break-word;font-size:12px;margin:0}
 @keyframes sw{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.radar i{animation:none}}
 body.compact .bd{padding:5px;font-size:12px}body.read{font-size:16px}
 @media print{header,#term,main>.pn:not(#p-rep){display:none}main{display:block;padding:0}body{background:#fff;color:#000}.pn{border:0;max-height:none}.bd{overflow:visible}}
+
+nav#tabs{display:flex;gap:4px;padding:0 0 7px}nav#tabs button{flex:1;padding:9px 4px;font-size:14px;letter-spacing:.06em}nav#tabs button.on{background:var(--ol);border-color:var(--tac);color:#fff}
+.menu{display:none}.hd button[data-m],.hd button[data-x]{display:none}
+#alerts{white-space:nowrap;overflow-x:auto;padding:2px 0 6px}details.bar summary{cursor:pointer;color:var(--tac)}details.bar{padding:2px 0 6px}
+main{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));align-items:start;padding-bottom:56px}
+#p-map,.pn.wide{grid-column:1/-1}.pn,.pn.wide{max-height:none}.pn .bd{max-height:440px}#p-os .bd,#p-fd .bd,#p-rep .bd{max-height:none}#map{height:340px}
+body[data-view=inicio] .pn:not([data-v=inicio]),body[data-view=investigar] .pn:not([data-v=investigar]),body[data-view=informe] .pn:not([data-v=informe]){display:none}
+#term{height:30px;cursor:pointer}#term.open{height:200px}#term:not(.open)::before{content:"TERMINAL (toque para abrir)";color:var(--mut);display:block}
+@media(max-width:700px){.top .note{display:none}.row>*{flex-basis:100%}}
 </style></head><body>
 <header>
 <div class="top"><div class="radar" title="Decorativo: no representa datos reales"><i></i></div><h1>FALCÓN INTELLIGENCE</h1><span class="note">Guanajuato · OSINT · datos públicos</span><span class="clock" id="clk"></span></div>
@@ -48,9 +57,9 @@ body.compact .bd{padding:5px;font-size:12px}body.read{font-size:16px}
 <a target="_blank" rel="noopener" href="https://smn.conagua.gob.mx/">SMN</a>
 <a target="_blank" rel="noopener" href="https://seguridad.guanajuato.gob.mx/proteccion-civil/pronosticos-boletines-y-avisos/">Protección Civil Gto</a>
 <a target="_blank" rel="noopener" href="https://preparados.gob.mx/">Preparados</a></div>
-<div class="bar">Actualización: <select id="iv"><option value="1">1 min</option><option value="5" selected>5 min</option><option value="15">15 min</option></select>
-<button id="fs">Pantalla completa</button><button id="cp">Modo compacto</button><button id="rd">Modo lectura</button><button id="rs">Restablecer paneles</button></div>
-<div class="menu" id="menu"></div>
+<details class="bar"><summary>Ajustes</summary>Actualización: <select id="iv"><option value="1">1 min</option><option value="5" selected>5 min</option><option value="15">15 min</option></select>
+<button id="fs">Pantalla completa</button><button id="cp">Modo compacto</button><button id="rd">Modo lectura</button><button id="rs">Restablecer paneles</button></details>
+<nav id="tabs"><button data-view="inicio">Inicio</button><button data-view="investigar">Investigar</button><button data-view="informe">Informe</button></nav><div class="menu" id="menu"></div>
 </header>
 <main>
 <section class="pn" id="p-map"><div class="hd"><b>MAPA GUANAJUATO</b></div><div class="bd"><div id="map"></div><div class="note" id="mapn">Toque un municipio para filtrar noticias. Capas en el control del mapa. Las marcas son ciudades; no hay ubicaciones sensibles.</div></div></section>
@@ -69,7 +78,7 @@ body.compact .bd{padding:5px;font-size:12px}body.read{font-size:16px}
 <div class="row"><input id="f-full" placeholder="Nombre completo o parcial (obligatorio)"><input id="f-n1" placeholder="Primer nombre"><input id="f-n2" placeholder="Segundo nombre"><input id="f-a1" placeholder="Primer apellido"><input id="f-a2" placeholder="Segundo apellido"></div>
 <div class="row"><select id="f-g"><option>No especificado</option><option>Masculino</option><option>Femenino</option></select><input id="f-bp" placeholder="Lugar de nacimiento"><input id="f-st" placeholder="Estado o municipio"><input id="f-co" placeholder="País"><input id="f-pr" placeholder="Profesión"></div>
 <div class="row"><input id="f-em" placeholder="Empresa"><input id="f-in" placeholder="Institución"><input id="f-al" placeholder="Alias público"><input id="f-ex" placeholder="Información adicional"></div>
-<div class="row"><button class="p" id="gen">Generar consultas</button><button class="p" id="auto-b">Buscar en fuentes abiertas (automático)</button><button id="clr">Limpiar</button></div><div class="note">Automático: Wikipedia, Wikidata, OpenAlex, Crossref, ORCID y GDELT. Las demás fuentes se abren manualmente.</div><div id="auto"></div>
+<div class="row"><button class="p" id="gen">Generar consultas</button><button class="p" id="auto-b">Buscar en fuentes abiertas (automático)</button><button class="p" id="deep-b">Investigar en mis fuentes (site:)</button><button id="clr">Limpiar</button></div><div class="note">Automático: Wikipedia, Wikidata, OpenAlex, Crossref, ORCID y GDELT. Las demás fuentes se abren manualmente.</div><div id="auto"></div><div class="note" id="deepn"></div><div id="deepr"></div>
 <div class="note">Género y lugar de nacimiento no se usan como prueba de identidad ni para generar consultas.</div>
 <div id="qs"></div><h4>Fuentes</h4><div class="row"><select id="qsel"></select><select id="scat"></select></div><div class="src" id="srcs"></div></div></section>
 <section class="pn wide" id="p-fd"><div class="hd"><b>HALLAZGOS</b></div><div class="bd">
@@ -134,9 +143,12 @@ const hv=(a,b,c,d)=>{const R=6371,t=x=>x*Math.PI/180,A=Math.sin(t(c-a)/2)**2+Mat
 async function eq(){try{const r=await fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=14&maxlatitude=33&minlongitude=-120&maxlongitude=-85&orderby=time&limit=10&minmagnitude=3');if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();
 $('#eq').innerHTML=j.features.length?'<table><tr><th>Mag</th><th>Fecha</th><th>Región</th><th>km a León</th></tr>'+j.features.map(f=>{const p=f.properties,[lo,la]=f.geometry.coordinates,st=ageSt(p.time);return `<tr><td>${p.mag}</td><td>${new Date(p.time).toLocaleString('es-MX')} <span class="${st}">${st}</span></td><td><a target="_blank" rel="noopener" href="${esc(safeUrl(p.url))}">${esc(p.place)}</a></td><td>${Math.round(hv(21.125,-101.686,la,lo))}</td></tr>`}).join('')+'</table>':'Sin sismos M3+ recientes en la región consultada.';
 log('USGS','Consulta de sismos',j.features[0]?ageSt(j.features[0].properties.time):'UNKNOWN',j.features.length+' eventos M3+')}catch(e){$('#eq').textContent='Sin datos: '+e.message;log('USGS','Sismos','OFFLINE',e.message)}}
-/* tráfico aéreo OpenSky (ADS-B anónimo) */
-async function air(){try{const r=await fetch('https://opensky-network.org/api/states/all?lamin=20.5&lomin=-102&lamax=21.5&lomax=-101');if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json(),a=(j.states||[]).map(x=>({c:(x[1]||'').trim()||x[0],p:x[2],alt:x[7]!=null?Math.round(x[7]):null,v:x[9]!=null?Math.round(x[9]*3.6):null,g:x[8],d:x[6]!=null?Math.round(hv(BJX[1],BJX[2],x[6],x[5])):999})).sort((p,q)=>p.d-q.d),st=ageSt((j.time||0)*1000);
-$('#air').innerHTML=`<span class="tag ${st}">${st}</span> <span class="note">${a.length} aeronaves · ${esc(now())}</span>`+(a.length?'<table><tr><th>Indicativo</th><th>País</th><th>Alt m</th><th>km/h</th><th>Suelo</th><th>km BJX</th></tr>'+a.map(x=>`<tr><td>${esc(x.c)}</td><td>${esc(x.p)}</td><td>${x.alt??'—'}</td><td>${x.v??'—'}</td><td>${x.g?'sí':'no'}</td><td>${x.d}</td></tr>`).join('')+'</table>':'<div class="note">Sin aeronaves detectadas en la zona ahora.</div>');log('OpenSky','Aeronaves cerca de BJX',st,a.length+' detectadas')}catch(e){$('#air').innerHTML='<span class="tag OFFLINE">OFFLINE</span> '+esc(e.message)+' (OpenSky limita consultas anónimas)';log('OpenSky','Tráfico aéreo','OFFLINE',e.message)}}
+/* tráfico aéreo: adsb.lol (principal) y OpenSky (respaldo) */
+async function air(){let a,src;
+try{const r=await fetch('https://api.adsb.lol/v2/point/'+BJX[1]+'/'+BJX[2]+'/60');if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();src='adsb.lol';a=(j.ac||[]).map(x=>({c:(x.flight||'').trim()||x.r||x.hex,p:x.t||'',alt:typeof x.alt_baro==='number'?Math.round(x.alt_baro*.3048):null,v:x.gs!=null?Math.round(x.gs*1.852):null,g:x.alt_baro==='ground',d:x.dst!=null?Math.round(x.dst*1.852):999}))}
+catch(e1){try{const r=await fetch('https://opensky-network.org/api/states/all?lamin=20.5&lomin=-102&lamax=21.5&lomax=-101');if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();src='OpenSky';a=(j.states||[]).map(x=>({c:(x[1]||'').trim()||x[0],p:x[2],alt:x[7]!=null?Math.round(x[7]):null,v:x[9]!=null?Math.round(x[9]*3.6):null,g:x[8],d:x[6]!=null?Math.round(hv(BJX[1],BJX[2],x[6],x[5])):999}))}
+catch(e2){$('#air').innerHTML='<span class="tag OFFLINE">OFFLINE</span> adsb.lol: '+esc(e1.message)+' · OpenSky: '+esc(e2.message)+'. Si abre la app dentro de Claude, las consultas externas están bloqueadas; funciona desde GitHub Pages.';log('Aviones','Tráfico aéreo','OFFLINE',e2.message);return}}
+a.sort((p,q)=>p.d-q.d);$('#air').innerHTML=`<span class="tag LIVE">LIVE</span> <span class="note">${a.length} aeronaves a ≤60 NM de BJX · ${esc(src)} · ${esc(now())}</span>`+(a.length?'<table><tr><th>Indicativo</th><th>Tipo/País</th><th>Alt m</th><th>km/h</th><th>Suelo</th><th>km BJX</th></tr>'+a.map(x=>`<tr><td>${esc(x.c)}</td><td>${esc(x.p)}</td><td>${x.alt??'—'}</td><td>${x.v??'—'}</td><td>${x.g?'sí':'no'}</td><td>${x.d===999?'—':x.d}</td></tr>`).join('')+'</table>':'<div class="note">Sin aeronaves en la zona ahora.</div>');log(src,'Aeronaves cerca de BJX','LIVE',a.length+' detectadas')}
 /* noticias GDELT */
 const CATS={Gobierno:/gobierno|alcalde|gobernador|congreso|cabildo|municip/i,Economía:/econom|empleo|inversi|inflaci|salario/i,'Seguridad pública':/seguridad|policía|homicid|balacera|detenid/i,Justicia:/fiscal|juez|sentencia|tribunal|justicia/i,Empresas:/empresa|industria|planta|armadora|comercio/i,Infraestructura:/obra|carretera|puente|infraestructura|agua potable/i,Educación:/escuela|universidad|educaci|alumno/i,Turismo:/turis|hotel|festival|visitante/i,'Protección civil':/lluvia|inundaci|incendio|sismo|protecci[oó]n civil|tormenta/i};
 $('#cat').innerHTML+=Object.keys(CATS).map(k=>`<option>${k}</option>`).join('');
@@ -245,6 +257,23 @@ res.forEach((r,i)=>{const n=S[i][0];if(r.status==='fulfilled'){r.value.forEach(x
 box.innerHTML='<div class="note">Consultadas automáticamente '+esc(now())+' → '+esc(st.join(' · '))+'. Pueden ser homónimos: confirme la identidad antes de guardar como verificado.</div>'+(AR.length?AR.map((x,i)=>`<div class="card POSIBLE"><h4>${esc(x.title)}</h4><div class="note">${esc(x.src)} · ${esc(x.type)} · ${esc(x.date||'s/f')}</div><div>${esc(x.desc)}</div><div class="row"><button data-o="${i}">Abrir fuente</button><button data-sv="${i}">Guardar hallazgo</button></div></div>`).join(''):'<div class="card">Sin resultados automáticos. Use las fuentes manuales de abajo.</div>')}
 $('#auto-b').onclick=auto;
 document.addEventListener('click',e=>{const b=e.target.closest('[data-o],[data-sv]');if(!b)return;const x=AR[+(b.dataset.o??b.dataset.sv)];if(!x)return;if(b.dataset.o!==undefined)return openU(x.url);const u=safeUrl(x.url);if(!u)return alert('URL no válida.');F.push({id:Date.now(),title:x.title,url:u,src:x.src,doc:x.date,type:x.type,name:x.title,desc:x.desc,query:now(),st:'POSIBLE COINCIDENCIA',com:'Obtenido por búsqueda automática; identidad sin confirmar',m:match(x.title+' '+x.desc)});LS.set('fi_f',F);drawF();log('Hallazgos','Guardado','LIVE',x.title,u)});
+/* investigación por dominio vía buscador (proxy CORS de terceros) */
+async function proxy(u){for(const p of ['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url=']){try{const r=await fetch(p+encodeURIComponent(u));if(r.ok){const t=await r.text();if(t.length>500)return t}}catch(e){}}throw Error('proxy sin respuesta')}
+const unwrap=h=>{const m=(h||'').match(/uddg=([^&]+)/);h=m?decodeURIComponent(m[1]):(h||'');return h.startsWith('//')?'https:'+h:h};
+async function srch(q){let t=await proxy('https://html.duckduckgo.com/html/?q='+encodeURIComponent(q)),d=new DOMParser().parseFromString(t,'text/html');
+let r=[...d.querySelectorAll('.result')].map(x=>{const a=x.querySelector('.result__a');return a&&{title:a.textContent.trim(),url:unwrap(a.getAttribute('href')),desc:((x.querySelector('.result__snippet')||{}).textContent||'').trim()}}).filter(Boolean);
+if(!r.length){t=await proxy('https://www.bing.com/search?setlang=es&q='+encodeURIComponent(q));d=new DOMParser().parseFromString(t,'text/html');r=[...d.querySelectorAll('li.b_algo')].map(x=>{const a=x.querySelector('h2 a');return a&&{title:a.textContent.trim(),url:a.href,desc:((x.querySelector('.b_caption p')||{}).textContent||'').trim()}}).filter(Boolean)}
+return r.slice(0,4)}
+let deepOn=false;
+async function deep(){const b=$('#deep-b');if(deepOn){deepOn=false;return}if(!Q.length&&!gen())return;const nm=Q[0].replace(/"/g,''),k=$('#scat').value,hosts=new Map();
+SRC.filter(s=>!k||s[0]===k).forEach(s=>{try{const h=new URL(s[2]).hostname;if(!hosts.has(h))hosts.set(h,s[1])}catch(e){}});
+const jobs=[['Web general','"'+nm+'"'],['Web general + contexto',Q.find((q,i)=>i>0&&/Guanajuato|M[eé]xico/.test(q))||'"'+nm+'" México'],...[...hosts].map(([h,n])=>[n,'"'+nm+'" site:'+h])];
+deepOn=true;b.textContent='Detener';$('#deepr').innerHTML='';let ok=0,bad=0,hits=0;
+for(let i=0;i<jobs.length&&deepOn;i++){const [n,q]=jobs[i];$('#deepn').textContent='Investigando '+(i+1)+'/'+jobs.length+': '+n;
+try{const r=await srch(q);ok++;r.forEach(x=>{if(!safeUrl(x.url))return;hits++;AR.push({...x,src:n+' (vía buscador)',type:'Resultado indexado',date:''});const j=AR.length-1;$('#deepr').insertAdjacentHTML('beforeend',`<div class="card POSIBLE"><h4>${esc(x.title)}</h4><div class="note">${esc(n)} · consulta: ${esc(q)}</div><div>${esc(x.desc)}</div><div class="row"><button data-o="${j}">Abrir fuente</button><button data-sv="${j}">Guardar hallazgo</button></div></div>`)})}catch(e){bad++;if(bad>=4&&!ok){log('Investigación','Buscador','OFFLINE','Proxy o buscador no responde: '+e.message);break}}
+await new Promise(r=>setTimeout(r,1500))}
+deepOn=false;b.textContent='Investigar en mis fuentes (site:)';$('#deepn').textContent='Terminado '+now()+' · '+ok+' consultas correctas, '+bad+' sin respuesta, '+hits+' resultados. Son páginas indexadas por buscadores, no consultas directas a cada portal; confirme la identidad (homónimos).';log('Investigación','Búsqueda por dominios',hits?'LIVE':'UNKNOWN',hits+' resultados')}
+$('#deep-b').onclick=deep;
 /* hallazgos */
 let F=LS.get('fi_f',[]);const ST=['PENDIENTE','POSIBLE COINCIDENCIA','CORROBORADO','VERIFICADO','DESCARTADO'];
 function match(t){const w=[v('f-full'),v('f-n1'),v('f-a1'),v('f-a2'),v('f-st'),v('f-pr'),v('f-em'),v('f-in')].filter(Boolean),h=t.toLowerCase();return w.filter(x=>h.includes(x.toLowerCase()))}
@@ -297,5 +326,10 @@ sbs();
 /* actualización por módulo */
 let tm=[];function sched(){tm.forEach(clearInterval);const ms=+$('#iv').value*6e4;tm=[setInterval(wx,ms),setInterval(eq,ms),setInterval(news,Math.max(ms,3e5)),setInterval(air,Math.max(ms,12e4))]}
 $('#iv').onchange=sched;
+const VW={map:'inicio',cam:'inicio',air:'inicio',wx:'inicio',eq:'inicio',news:'inicio',os:'investigar',fd:'investigar',rep:'informe'};
+Object.keys(VW).forEach(k=>$('#p-'+k).dataset.v=VW[k]);lay={};LS.set('fi_lay',{});applyLay();
+function setView(v){document.body.dataset.view=v;document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.view===v));LS.set('fi_view',v);window.scrollTo(0,0);if(map)setTimeout(()=>map.invalidateSize(),150)}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>setView(b.dataset.view));setView(LS.get('fi_view','inicio'));
+$('#term').onclick=()=>$('#term').classList.toggle('open');
 wx();eq();news();air();sched();log('Sistema','Inicio','LIVE','Falcón Intelligence iniciado; los módulos sin API aparecen como UNKNOWN u OFFLINE');
 </script></body></html>
