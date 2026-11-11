@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FALCÓN INTELLIGENCE</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#080B0A;--ol:#596B45;--tac:#A3C66A;--term:#00FF88;--st:#252B2A;--gold:#C5A059;--tx:#E9ECE6;--mut:#8d978a;--bad:#d9674f}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+a{color:var(--tac)}button,select,input,textarea{font:inherit;color:var(--tx);background:#10150f;border:1px solid var(--ol);border-radius:3px;padding:6px 9px}
+button{cursor:pointer;background:var(--st)}button:hover{border-color:var(--term)}button.p{background:var(--ol);border-color:var(--tac)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+header{position:sticky;top:0;z-index:900;background:#0c110e;border-bottom:1px solid var(--ol);padding:env(safe-area-inset-top,0) 10px 0}
+.top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:6px 0}
+h1{font-size:16px;margin:0;color:var(--gold);letter-spacing:.14em}
+.clock{margin-left:auto;color:var(--term)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:4px 0 7px;font-size:12px;color:var(--mut)}
+.menu{display:flex;gap:6px;flex-wrap:wrap;padding-bottom:7px}.menu button{padding:3px 8px;font-size:12px}.menu button.off{opacity:.45}
+main{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:10px;padding:10px;padding-bottom:calc(190px + env(safe-area-inset-bottom,0))}
+@media(max-width:1100px){main{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){main{grid-template-columns:1fr}}
+.pn{background:#0d120f;border:1px solid var(--st);border-top:2px solid var(--ol);min-width:0;max-height:640px;display:flex;flex-direction:column}
+.pn.wide{grid-column:1/-1;max-height:none}.pn.max{grid-column:1/-1;max-height:none}.pn.hid{display:none}.pn.min .bd{display:none}
+.hd{display:flex;gap:8px;align-items:center;padding:6px 9px;background:var(--st);font-size:12px;color:var(--tac);letter-spacing:.08em}
+.hd b{flex:1;font-weight:600}.hd button{padding:1px 7px;font-size:12px}
+.bd{padding:9px;overflow:auto;flex:1;-webkit-overflow-scrolling:touch}
+#map{height:360px;border:1px solid var(--st)}
+.tag{display:inline-block;padding:0 6px;border:1px solid;border-radius:2px;font-size:11px}
+.LIVE{color:var(--term)}.RECENT{color:var(--tac)}.HISTORICAL{color:var(--gold)}.OFFLINE{color:var(--bad)}.UNKNOWN{color:var(--mut)}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.row>*{flex:1 1 120px;min-width:0}
+.note{color:var(--mut);font-size:12px}.deco{color:var(--ol);font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:3px 5px;border-bottom:1px solid var(--st);text-align:left}
+.card{border:1px solid var(--st);border-left:3px solid var(--ol);padding:7px 9px;margin:7px 0}
+.card h4{margin:0 0 3px;font-size:13px}.card.VERIFICADO,.card.CORROBORADO{border-left-color:var(--term)}.card.DESCARTADO{opacity:.5;border-left-color:var(--bad)}.card.POSIBLE{border-left-color:var(--gold)}
+.src{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px}
+.src div{border:1px solid var(--st);padding:6px;font-size:12px}
+#term{position:fixed;left:0;right:0;bottom:0;height:150px;background:#050807;border-top:1px solid var(--term);padding:5px 10px calc(5px + env(safe-area-inset-bottom,0));overflow:auto;font-size:12px;z-index:800}
+#term div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+pre{white-space:pre-wrap;word-break:break-word;font-size:12px;margin:0}
+.radar{width:34px;height:34px;border:1px solid var(--ol);border-radius:50%;position:relative;overflow:hidden;flex:none}
+.radar i{position:absolute;left:50%;top:50%;width:50%;height:1px;background:var(--term);transform-origin:0 0;animation:sw 4s linear infinite}
+@keyframes sw{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.radar i{animation:none}}
+body.compact .bd{padding:5px;font-size:12px}body.read{font-size:16px}
+@media print{header,#term,main>.pn:not(#p-rep){display:none}main{display:block;padding:0}body{background:#fff;color:#000}.pn{border:0;max-height:none}.bd{overflow:visible}}
+</style></head><body>
+<header>
+<div class="top"><div class="radar" title="Decorativo: no representa datos reales"><i></i></div><h1>FALCÓN INTELLIGENCE</h1><span class="note">Guanajuato · OSINT · datos públicos</span><span class="clock" id="clk"></span></div>
+<div class="bar" id="alerts">ALERTAS OFICIALES: sin integración automática en esta versión. Consultar:
+<a target="_blank" rel="noopener" href="https://smn.conagua.gob.mx/">SMN</a>
+<a target="_blank" rel="noopener" href="https://seguridad.guanajuato.gob.mx/proteccion-civil/pronosticos-boletines-y-avisos/">Protección Civil Gto</a>
+<a target="_blank" rel="noopener" href="https://preparados.gob.mx/">Preparados</a></div>
+<div class="bar">Actualización: <select id="iv"><option value="1">1 min</option><option value="5" selected>5 min</option><option value="15">15 min</option></select>
+<button id="fs">Pantalla completa</button><button id="cp">Modo compacto</button><button id="rd">Modo lectura</button><button id="rs">Restablecer paneles</button></div>
+<div class="menu" id="menu"></div>
+</header>
+<main>
+<section class="pn" id="p-map"><div class="hd"><b>MAPA GUANAJUATO</b></div><div class="bd"><div id="map"></div><div class="note" id="mapn">Toque un municipio para filtrar noticias. Capas en el control del mapa. Las marcas son ciudades; no hay ubicaciones sensibles.</div></div></section>
+<section class="pn" id="p-cam"><div class="hd"><b>PUBLIC LIVE CAMERAS</b></div><div class="bd">
+<div class="card"><h4>Seguridad Abierta · Gobierno de Guanajuato</h4><div id="cs1"><span class="tag OFFLINE">PUBLIC STREAM OFFLINE</span> <span class="note">OPEN OFFICIAL SOURCE</span></div>
+<div class="note" id="ct1">Última verificación: nunca</div><div class="row"><button class="p" data-open="https://seguridad.guanajuato.gob.mx/seguridad-abierta/">Abrir portal oficial</button><button data-ping="1" data-u="https://seguridad.guanajuato.gob.mx/seguridad-abierta/">Reintentar conexión</button></div></div>
+<div class="card"><h4>C5i · Cámaras de videovigilancia (complementaria)</h4><div id="cs2"><span class="tag OFFLINE">PUBLIC STREAM OFFLINE</span> <span class="note">OPEN OFFICIAL SOURCE</span></div>
+<div class="note" id="ct2">Última verificación: nunca</div><div class="row"><button class="p" data-open="https://seguridad.guanajuato.gob.mx/c5i/camaras-videovigilancia/">Abrir portal oficial</button><button data-ping="2" data-u="https://seguridad.guanajuato.gob.mx/c5i/camaras-videovigilancia/">Reintentar conexión</button></div></div>
+<p class="note">No se incrustan transmisiones sin verificar que el portal las publique y permita incrustación. Reintentar solo comprueba si el portal responde; no confirma que haya video.</p></div></section>
+<section class="pn" id="p-air"><div class="hd"><b>AIR TRAFFIC MONITOR · BJX</b><button data-r="air">↻</button></div><div class="bd"><div id="air">Cargando…</div><div class="note">Aeronaves detectadas por ADS-B cerca de BJX (OpenSky). No son itinerarios; llegadas y salidas programadas en los portales:</div><div class="row"><button data-open="https://aeropuertodeleon.com/">Aeropuerto</button><button data-open="https://es.flightaware.com/live/airport/MMLO">FlightAware</button><button data-open="https://www.flightradar24.com/data/airports/BJX">Flightradar24</button></div></div></section>
+<section class="pn" id="p-wx"><div class="hd"><b>CLIMA · GUANAJUATO</b><button data-r="wx">↻</button></div><div class="bd"><div id="wx">Cargando…</div><div class="note" id="wxs"></div>
+<div class="row"><button data-open="https://smn.conagua.gob.mx/tools/GUI/EMAS.php">Estaciones EMAS</button><button data-open="https://www.windy.com/">Windy</button></div></div></section>
+<section class="pn" id="p-eq"><div class="hd"><b>SISMOS · MÉXICO (USGS)</b><button data-r="eq">↻</button></div><div class="bd"><div id="eq">Cargando…</div><div class="note">Actividad nacional; la distancia a León se calcula, no implica evento en Guanajuato. Fuente oficial mexicana: <a target="_blank" rel="noopener" href="https://www.ssn.unam.mx/">SSN</a>.</div></div></section>
+<section class="pn" id="p-news"><div class="hd"><b>NOTICIAS (GDELT)</b><button data-r="news">↻</button></div><div class="bd"><div class="row"><select id="city"></select><select id="cat"><option value="">Todas las categorías</option></select></div><div id="news">Cargando…</div></div></section>
+<section class="pn wide" id="p-os"><div class="hd"><b>FALCÓN OSINT ENGINE</b></div><div class="bd">
+<div class="row"><input id="f-full" placeholder="Nombre completo o parcial (obligatorio)"><input id="f-n1" placeholder="Primer nombre"><input id="f-n2" placeholder="Segundo nombre"><input id="f-a1" placeholder="Primer apellido"><input id="f-a2" placeholder="Segundo apellido"></div>
+<div class="row"><select id="f-g"><option>No especificado</option><option>Masculino</option><option>Femenino</option></select><input id="f-bp" placeholder="Lugar de nacimiento"><input id="f-st" placeholder="Estado o municipio"><input id="f-co" placeholder="País"><input id="f-pr" placeholder="Profesión"></div>
+<div class="row"><input id="f-em" placeholder="Empresa"><input id="f-in" placeholder="Institución"><input id="f-al" placeholder="Alias público"><input id="f-ex" placeholder="Información adicional"></div>
+<div class="row"><button class="p" id="gen">Generar consultas</button><button class="p" id="auto-b">Buscar en fuentes abiertas (automático)</button><button id="clr">Limpiar</button></div><div class="note">Automático: Wikipedia, Wikidata, OpenAlex, Crossref, ORCID y GDELT. Las demás fuentes se abren manualmente.</div><div id="auto"></div>
+<div class="note">Género y lugar de nacimiento no se usan como prueba de identidad ni para generar consultas.</div>
+<div id="qs"></div><h4>Fuentes</h4><div class="row"><select id="qsel"></select><select id="scat"></select></div><div class="src" id="srcs"></div></div></section>
+<section class="pn wide" id="p-fd"><div class="hd"><b>HALLAZGOS</b></div><div class="bd">
+<div class="row"><input id="h-t" placeholder="Título"><input id="h-u" placeholder="URL original (https://…)"><input id="h-s" placeholder="Fuente"><input id="h-d" type="date" title="Fecha del documento"><input id="h-y" placeholder="Tipo (noticia, registro, sentencia…)"></div>
+<div class="row"><input id="h-n" placeholder="Nombre encontrado"><textarea id="h-x" rows="2" placeholder="Descripción"></textarea><button class="p" id="h-add">Guardar hallazgo</button></div>
+<div id="fds"></div></div></section>
+<section class="pn wide" id="p-rep"><div class="hd"><b>INFORME Y EXPEDIENTES</b></div><div class="bd">
+<div class="row"><button class="p" id="rg">Generar informe</button><button id="rt">Descargar .txt</button><button id="rc">Descargar CSV</button><button id="rp">Imprimir / PDF</button></div>
+<div class="row"><input id="cn" placeholder="Nombre del expediente"><button id="cs">Guardar expediente</button></div><details><summary>Nube con cuenta (Supabase, opcional)</summary><div class="note" id="sbs"></div><div class="row"><input id="sb-u" placeholder="URL del proyecto Supabase"><input id="sb-k" placeholder="Clave anon (pública)"></div><div class="row"><input id="sb-e" type="email" placeholder="Correo"><input id="sb-p" type="password" placeholder="Contraseña"></div><div class="row"><button id="sb-up">Crear cuenta</button><button id="sb-in">Entrar</button><button id="sb-out">Salir</button><button id="sb-push">Subir expedientes</button><button id="sb-pull">Bajar expedientes</button></div><div class="note">Ejecute supabase.sql una vez. Solo se sube lo que usted pulsa.</div></details><div id="cases"></div><pre id="rep"></pre></div></section>
+</main>
+<div id="term"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now=()=>new Date().toLocaleString('es-MX');
+const LS={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){log('Sistema','ERROR','OFFLINE','Almacenamiento local no disponible');return false}}};
+const safeUrl=u=>{try{const x=new URL(u);return /^https?:$/.test(x.protocol)?x.href:''}catch(e){return ''}};
+const openU=u=>{const s=safeUrl(u);if(s)window.open(s,'_blank','noopener')};
+setInterval(()=>$('#clk').textContent=new Date().toLocaleTimeString('es-MX'),1000);
+/* terminal */
+function log(src,type,st,msg,link){const d=document.createElement('div');d.innerHTML=`${now()} <span class="${st}">[${st}]</span> ${esc(src)} · ${esc(type)} · ${esc(msg)} ${link&&safeUrl(link)?`<a target="_blank" rel="noopener" href="${esc(safeUrl(link))}">enlace</a>`:''}`;const t=$('#term');t.prepend(d);while(t.children.length>80)t.lastChild.remove()}
+const ageSt=ms=>{const h=(Date.now()-ms)/36e5;return h<2?'LIVE':h<48?'RECENT':'HISTORICAL'};
+/* ciudades */
+const C=[['León',21.125,-101.686],['Silao',20.9433,-101.4272],['Irapuato',20.6767,-101.3542],['Salamanca',20.5719,-101.1917],['Celaya',20.5235,-100.8157],['Guanajuato capital',21.019,-101.2574],['San Miguel de Allende',20.9144,-100.7452],['Dolores Hidalgo',21.1561,-100.9347],['San Francisco del Rincón',21.0186,-101.8575]];
+const BJX=['Aeropuerto Internacional del Bajío (BJX/MMLO)',20.9935,-101.4808];
+$('#city').innerHTML='<option value="Guanajuato">Todo el estado</option>'+C.map(c=>`<option>${c[0]}</option>`).join('');
+/* paneles */
+const P=[['map','Mapa'],['cam','Cámaras'],['air','Vuelos'],['wx','Clima'],['eq','Sismos'],['news','Noticias'],['os','OSINT'],['fd','Hallazgos'],['rep','Informe']];
+let lay=LS.get('fi_lay',{});
+function applyLay(){P.forEach(([k,n])=>{const e=$('#p-'+k);e.classList.toggle('hid',!!lay[k]?.h);e.classList.toggle('min',!!lay[k]?.m);e.classList.toggle('max',!!lay[k]?.x)});$('#menu').innerHTML=P.map(([k,n])=>`<button data-t="${k}" class="${lay[k]?.h?'off':''}">${n}</button>`).join('')}
+document.querySelectorAll('.pn .hd').forEach(h=>{const k=h.parentNode.id.slice(2);h.insertAdjacentHTML('beforeend',`<button data-m="${k}" title="Reducir">–</button><button data-x="${k}" title="Ampliar">⤢</button>`)});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+if(d.t){lay[d.t]={...lay[d.t],h:!lay[d.t]?.h};LS.set('fi_lay',lay);applyLay();map&&setTimeout(()=>map.invalidateSize(),100)}
+if(d.m){lay[d.m]={...lay[d.m],m:!lay[d.m]?.m};LS.set('fi_lay',lay);applyLay()}
+if(d.x){lay[d.x]={...lay[d.x],x:!lay[d.x]?.x};LS.set('fi_lay',lay);applyLay();map&&setTimeout(()=>map.invalidateSize(),100)}
+if(d.open)openU(d.open);if(d.r)({wx,eq,news,air}[d.r]());if(d.ping)ping(d.ping,d.u)});
+$('#rs').onclick=()=>{lay={};LS.set('fi_lay',lay);applyLay()};
+$('#fs').onclick=()=>{const el=document.documentElement;if(document.fullscreenElement)document.exitFullscreen();else if(el.requestFullscreen)el.requestFullscreen();else alert('Safari en iPhone no permite pantalla completa; use Añadir a pantalla de inicio.')};
+$('#cp').onclick=()=>document.body.classList.toggle('compact');$('#rd').onclick=()=>document.body.classList.toggle('read');
+applyLay();
+/* mapa */
+let map,mk={};
+try{map=L.map('map').setView([20.95,-101.3],8);
+const osm=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap'}).addTo(map);
+const lc=L.layerGroup().addTo(map),lw=L.layerGroup().addTo(map),la=L.layerGroup().addTo(map);
+C.forEach(c=>{const m=L.circleMarker([c[1],c[2]],{radius:7,color:'#A3C66A',fillColor:'#00FF88',fillOpacity:.7}).addTo(lc).bindTooltip(c[0]);m.on('click',()=>{$('#city').value=c[0];news();$('#mapn').textContent='Municipio seleccionado: '+c[0]});mk[c[0]]=L.circleMarker([c[1],c[2]],{radius:0,opacity:0}).addTo(lw)});
+L.marker([BJX[1],BJX[2]]).addTo(la).bindPopup(BJX[0]);
+L.control.layers(null,{'Ciudades':lc,'Clima (etiquetas)':lw,'Aeropuerto':la}).addTo(map);
+osm.on('tileerror',()=>log('Mapa','Teselas','OFFLINE','No cargan las teselas de OpenStreetMap'))}catch(e){$('#map').textContent='Mapa no disponible: '+e.message;log('Mapa','Carga','OFFLINE',e.message)}
+/* cámaras: solo comprueba si el portal responde */
+async function ping(n,u){const t=$('#ct'+n);try{await fetch(u,{mode:'no-cors',cache:'no-store'});t.textContent='Portal responde · verificado '+now()+' · no se confirmó video';log('Cámaras','Portal alcanzable','UNKNOWN','Portal '+n+' responde; transmisión no verificada',u)}catch(e){t.textContent='Sin respuesta · '+now();log('Cámaras','Portal','OFFLINE','Portal '+n+' sin respuesta',u)}}
+/* clima Open-Meteo */
+async function wx(){const all=[...C.map(c=>[c[0],c[1],c[2]])];const u='https://api.open-meteo.com/v1/forecast?latitude='+all.map(c=>c[1]).join()+'&longitude='+all.map(c=>c[2]).join()+'&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,wind_speed_10m&timezone=auto';
+try{const r=await fetch(u);if(!r.ok)throw Error('HTTP '+r.status);let j=await r.json();j=Array.isArray(j)?j:[j];
+$('#wx').innerHTML='<table><tr><th>Municipio</th><th>°C</th><th>Sens.</th><th>HR</th><th>Viento</th><th>Lluvia</th></tr>'+j.map((x,i)=>{const c=x.current;return `<tr><td>${esc(all[i][0])}</td><td>${c.temperature_2m}</td><td>${c.apparent_temperature}</td><td>${c.relative_humidity_2m}%</td><td>${c.wind_speed_10m} km/h</td><td>${c.precipitation} mm</td></tr>`}).join('')+'</table>';
+j.forEach((x,i)=>{const m=mk[all[i][0]];if(m)m.bindTooltip(all[i][0]+' '+x.current.temperature_2m+'°C',{permanent:true,direction:'right'})});
+const st=ageSt(new Date(j[0].current.time+'Z').getTime()-(j[0].utc_offset_seconds||0)*1000);
+$('#wxs').innerHTML=`<span class="tag ${st}">${st}</span> Modelo Open-Meteo (no es estación oficial SMN) · consulta ${now()}`;log('Open-Meteo','Lectura de clima',st,'9 municipios actualizados')}
+catch(e){$('#wx').textContent='Sin datos: '+e.message;$('#wxs').innerHTML='<span class="tag OFFLINE">OFFLINE</span>';log('Open-Meteo','Clima','OFFLINE',e.message)}}
+/* sismos USGS */
+const hv=(a,b,c,d)=>{const R=6371,t=x=>x*Math.PI/180,A=Math.sin(t(c-a)/2)**2+Math.cos(t(a))*Math.cos(t(c))*Math.sin(t(d-b)/2)**2;return 2*R*Math.asin(Math.sqrt(A))};
+async function eq(){try{const r=await fetch('https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&minlatitude=14&maxlatitude=33&minlongitude=-120&maxlongitude=-85&orderby=time&limit=10&minmagnitude=3');if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();
+$('#eq').innerHTML=j.features.length?'<table><tr><th>Mag</th><th>Fecha</th><th>Región</th><th>km a León</th></tr>'+j.features.map(f=>{const p=f.properties,[lo,la]=f.geometry.coordinates,st=ageSt(p.time);return `<tr><td>${p.mag}</td><td>${new Date(p.time).toLocaleString('es-MX')} <span class="${st}">${st}</span></td><td><a target="_blank" rel="noopener" href="${esc(safeUrl(p.url))}">${esc(p.place)}</a></td><td>${Math.round(hv(21.125,-101.686,la,lo))}</td></tr>`}).join('')+'</table>':'Sin sismos M3+ recientes en la región consultada.';
+log('USGS','Consulta de sismos',j.features[0]?ageSt(j.features[0].properties.time):'UNKNOWN',j.features.length+' eventos M3+')}catch(e){$('#eq').textContent='Sin datos: '+e.message;log('USGS','Sismos','OFFLINE',e.message)}}
+/* tráfico aéreo OpenSky (ADS-B anónimo) */
+async function air(){try{const r=await fetch('https://opensky-network.org/api/states/all?lamin=20.5&lomin=-102&lamax=21.5&lomax=-101');if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json(),a=(j.states||[]).map(x=>({c:(x[1]||'').trim()||x[0],p:x[2],alt:x[7]!=null?Math.round(x[7]):null,v:x[9]!=null?Math.round(x[9]*3.6):null,g:x[8],d:x[6]!=null?Math.round(hv(BJX[1],BJX[2],x[6],x[5])):999})).sort((p,q)=>p.d-q.d),st=ageSt((j.time||0)*1000);
+$('#air').innerHTML=`<span class="tag ${st}">${st}</span> <span class="note">${a.length} aeronaves · ${esc(now())}</span>`+(a.length?'<table><tr><th>Indicativo</th><th>País</th><th>Alt m</th><th>km/h</th><th>Suelo</th><th>km BJX</th></tr>'+a.map(x=>`<tr><td>${esc(x.c)}</td><td>${esc(x.p)}</td><td>${x.alt??'—'}</td><td>${x.v??'—'}</td><td>${x.g?'sí':'no'}</td><td>${x.d}</td></tr>`).join('')+'</table>':'<div class="note">Sin aeronaves detectadas en la zona ahora.</div>');log('OpenSky','Aeronaves cerca de BJX',st,a.length+' detectadas')}catch(e){$('#air').innerHTML='<span class="tag OFFLINE">OFFLINE</span> '+esc(e.message)+' (OpenSky limita consultas anónimas)';log('OpenSky','Tráfico aéreo','OFFLINE',e.message)}}
+/* noticias GDELT */
+const CATS={Gobierno:/gobierno|alcalde|gobernador|congreso|cabildo|municip/i,Economía:/econom|empleo|inversi|inflaci|salario/i,'Seguridad pública':/seguridad|policía|homicid|balacera|detenid/i,Justicia:/fiscal|juez|sentencia|tribunal|justicia/i,Empresas:/empresa|industria|planta|armadora|comercio/i,Infraestructura:/obra|carretera|puente|infraestructura|agua potable/i,Educación:/escuela|universidad|educaci|alumno/i,Turismo:/turis|hotel|festival|visitante/i,'Protección civil':/lluvia|inundaci|incendio|sismo|protecci[oó]n civil|tormenta/i};
+$('#cat').innerHTML+=Object.keys(CATS).map(k=>`<option>${k}</option>`).join('');
+let nw=[];
+async function news(){const c=$('#city').value,q=(c==='Guanajuato'?'Guanajuato':c+' Guanajuato')+' sourcecountry:MX';$('#news').textContent='Cargando…';
+try{const r=await fetch('https://api.gdeltproject.org/api/v2/doc/doc?mode=artlist&maxrecords=25&format=json&sort=datedesc&query='+encodeURIComponent(q));if(!r.ok)throw Error('HTTP '+r.status);const j=await r.json();
+nw=(j.articles||[]).map(a=>{const s=a.seendate,t=Date.UTC(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8),+s.slice(9,11),+s.slice(11,13));return{...a,t,cat:Object.keys(CATS).find(k=>CATS[k].test(a.title))||'Sin clasificar'}});drawNews();
+log('GDELT','Noticias '+c,nw[0]?ageSt(nw[0].t):'UNKNOWN',nw.length+' resultados')}catch(e){$('#news').innerHTML='Sin datos de GDELT: '+esc(e.message)+'. <a target="_blank" rel="noopener" href="https://news.google.com/search?q='+encodeURIComponent(c+' Guanajuato')+'">Abrir Google News</a>';log('GDELT','Noticias','OFFLINE',e.message)}}
+function drawNews(){const k=$('#cat').value,l=nw.filter(a=>!k||a.cat===k);$('#news').innerHTML=l.length?l.map(a=>{const st=ageSt(a.t);return `<div class="card"><h4><a target="_blank" rel="noopener" href="${esc(safeUrl(a.url))}">${esc(a.title)}</a></h4><span class="note">${esc(a.domain)} · ${new Date(a.t).toLocaleString('es-MX')} · ${esc(a.cat)}</span> <span class="tag ${st}">${st}</span></div>`}).join(''):'Sin noticias para este filtro.'}
+$('#cat').onchange=drawNews;$('#city').onchange=news;
+/* OSINT: consultas */
+let Q=[];const v=id=>$('#'+id).value.trim();
+function gen(){const n1=v('f-n1'),n2=v('f-n2'),a1=v('f-a1'),a2=v('f-a2');let full=v('f-full')||[n1,n2,a1,a2].filter(Boolean).join(' ');if(!full){alert('Escriba al menos un nombre.');return false}
+const nm=new Set([full,[n1,a1].filter(Boolean).join(' '),[n1,a1,a2].filter(Boolean).join(' '),[n1,n2,a1,a2].filter(Boolean).join(' '),[a1,a2].filter(Boolean).join(' '),v('f-al')].filter(s=>s&&s.split(' ').length>=1));
+const ctx=[v('f-bp'),v('f-st'),v('f-co'),v('f-pr'),v('f-em'),v('f-in'),v('f-ex')].filter(Boolean),base=['Guanajuato','México','empresa'];
+const out=[];nm.forEach(n=>{out.push('"'+n+'"');[...ctx,...base].forEach(c=>out.push('"'+n+'" '+c))});
+if(n1&&a1)out.push('"'+n1+'" "'+a1+'"'+(v('f-pr')?' '+v('f-pr'):''));
+Q=[...new Set(out)];$('#qs').innerHTML='<div class="note">'+Q.length+' consultas únicas (duplicados eliminados)</div><pre>'+esc(Q.join('\n'))+'</pre>';$('#qsel').innerHTML=Q.map((q,i)=>`<option value="${i}">${esc(q)}</option>`).join('');drawSrc();log('OSINT','Consultas generadas','LIVE',Q.length+' consultas; no se consultó ninguna fuente');return true}
+$('#gen').onclick=gen;$('#clr').onclick=()=>{document.querySelectorAll('#p-os input').forEach(i=>i.value='');Q=[];$('#qs').innerHTML='';$('#srcs').innerHTML=''};
+/* catálogo: cat;nombre;url;prefijo de búsqueda */
+const SRC=`Gobierno;Plataforma de Transparencia;https://www.plataformadetransparencia.org.mx/;
+Gobierno;Datos abiertos MX;https://datos.gob.mx/busca/dataset?q=;1
+Gobierno;DOF;https://www.dof.gob.mx/;
+Gobierno;gob.mx;https://www.gob.mx/busqueda?utf8=%E2%9C%93&site=gobmx&q=;1
+Gobierno;Declaranet;https://declaranet.gob.mx/;
+Gobierno;Plataforma Digital Nacional;https://www.plataformadigitalnacional.org/;
+Empresas;RPC Economía;https://rpc.economia.gob.mx/;
+Empresas;SIEM;https://siem.economia.gob.mx/;
+Empresas;DENUE;https://www.inegi.org.mx/app/mapa/denue/;
+Empresas;DataMéxico;https://www.economia.gob.mx/datamexico/;
+Empresas;MARCANET IMPI;https://marcanet.impi.gob.mx/;
+Empresas;INDAUTOR;https://www.indautor.gob.mx/;
+Fiscal;SAT datos abiertos;https://www.sat.gob.mx/minisitio/DatosAbiertos/;
+Fiscal;SAT contribuyentes publicados;https://www.sat.gob.mx/minisitio/DatosAbiertos/contribuyentes_publicados.html;
+Fiscal;ComprasMX;https://comprasmx.buengobierno.gob.mx/;
+Fiscal;CompraNet histórico;https://historico-compranet.buengobierno.gob.mx/;
+Fiscal;ASF;https://www.asf.gob.mx/;
+Fiscal;Buen Gobierno;https://www.gob.mx/buengobierno;
+Justicia;SCJN;https://www.scjn.gob.mx/;
+Justicia;Semanario Judicial;https://sjf2.scjn.gob.mx/;
+Justicia;TFJA;https://www.tfja.gob.mx/;
+Justicia;TEPJF;https://www.te.gob.mx/;
+Justicia;OAJ;https://www.oaj.gob.mx/;
+Justicia;PJF servicios en línea;https://www.serviciosenlinea.pjf.gob.mx/;
+Justicia;FGR;https://www.gob.mx/fgr;
+Profesiones y política;Cédula profesional SEP;https://www.cedulaprofesional.sep.gob.mx/;
+Profesiones y política;INE;https://www.ine.mx/;
+Profesiones y política;SICEE INE;https://sicee.ine.mx/;
+Profesiones y política;Cámara de Diputados;https://www.diputados.gob.mx/;
+Profesiones y política;Senado;https://www.senado.gob.mx/;
+Internacional;OCCRP ID;https://id.occrp.org/;
+Internacional;OCCRP Aleph;https://aleph.occrp.org/search?q=;1
+Internacional;OpenCorporates;https://opencorporates.com/officers?q=;1
+Internacional;OpenSanctions;https://www.opensanctions.org/search/?q=;1
+Internacional;Offshore Leaks ICIJ;https://offshoreleaks.icij.org/search?q=;1
+Internacional;OFAC Sanctions Search;https://sanctionssearch.ofac.treas.gov/;
+Internacional;Lista consolidada ONU;https://main.un.org/securitycouncil/en/content/un-sc-consolidated-list;
+Internacional;Sanctions Map UE;https://www.sanctionsmap.eu/;
+Internacional;Banco Mundial firmas inhabilitadas;https://www.worldbank.org/en/projects-operations/procurement/debarred-firms;
+Internacional;SEC EDGAR;https://www.sec.gov/edgar/search/#/q=;1
+Internacional;Companies House UK;https://find-and-update.company-information.service.gov.uk/search?q=;1
+Internacional;Registro Empresas Chile;https://www.registrodeempresasysociedades.cl/;
+Noticias y redes;Google;https://www.google.com/search?q=;1
+Noticias y redes;Google News;https://news.google.com/search?q=;1
+Noticias y redes;Bing News;https://www.bing.com/news/search?q=;1
+Noticias y redes;GDELT;https://www.gdeltproject.org/;
+Noticias y redes;Facebook (público);https://www.facebook.com/search/top?q=;1
+Noticias y redes;LinkedIn personas;https://www.linkedin.com/search/results/people/?keywords=;1
+Noticias y redes;TikTok;https://www.tiktok.com/search?q=;1
+Noticias y redes;X;https://x.com/search?q=;1
+Noticias y redes;YouTube;https://www.youtube.com/results?search_query=;1
+Noticias y redes;Reddit;https://www.reddit.com/search/?q=;1
+Académica;Google Scholar;https://scholar.google.com/scholar?q=;1
+Académica;ORCID;https://orcid.org/orcid-search/search?searchQuery=;1
+Académica;Crossref;https://search.crossref.org/?q=;1
+Académica;OpenAlex;https://openalex.org/works?search=;1
+Académica;WorldCat;https://search.worldcat.org/search?q=;1
+Académica;Semantic Scholar;https://www.semanticscholar.org/search?q=;1
+Académica;Google Patents;https://patents.google.com/?inventor=;1
+Académica;PATENTSCOPE;https://patentscope.wipo.int/;
+Verificación;Google Lens;https://lens.google.com/;
+Verificación;TinEye;https://tineye.com/;
+Verificación;Bing Visual Search;https://www.bing.com/visualsearch;
+Verificación;WhatsMyName;https://whatsmyname.app/;
+Verificación;OSINT Framework;https://osintframework.com/;
+Verificación;ICANN Lookup;https://lookup.icann.org/;
+Verificación;crt.sh;https://crt.sh/?q=;1
+Verificación;Wayback Machine;https://web.archive.org/web/*/;1`.split('\n').map(l=>l.split(';'));
+const sc=$('#scat');sc.innerHTML='<option value="">Todas las categorías</option>'+[...new Set(SRC.map(s=>s[0]))].map(c=>`<option>${c}</option>`).join('');sc.onchange=drawSrc;
+function drawSrc(){const k=sc.value;$('#srcs').innerHTML=SRC.filter(s=>!k||s[0]===k).map((s,i)=>`<div><b>${esc(s[1])}</b><br><span class="note">${esc(s[0])} · ${s[3]?'consulta dirigida':'solo portal (sin búsqueda dirigida)'}</span><br><button data-go="${SRC.indexOf(s)}">Abrir búsqueda original</button></div>`).join('')}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(!b)return;const s=SRC[+b.dataset.go];if(Q.length===0&&!gen())return;const q=Q[+$('#qsel').value||0];const u=s[3]?s[2]+encodeURIComponent(q):s[2];openU(u);hist.push({src:s[1],url:u,q:s[3]?q:'(portal)',t:now(),dirigida:!!s[3]});LS.set('fi_hist',hist);log('OSINT','Enlace abierto','UNKNOWN',s[1]+' · no consultado automáticamente',u)});
+let hist=LS.get('fi_hist',[]);
+/* búsqueda automática (solo APIs públicas con CORS) */
+let AR=[];
+async function auto(){if(!Q.length&&!gen())return;const nm=Q[0].replace(/"/g,''),e=encodeURIComponent(nm),box=$('#auto');box.textContent='Consultando…';AR=[];
+const J=async(u,h)=>{const r=await fetch(u,h?{headers:h}:undefined);if(!r.ok)throw Error('HTTP '+r.status);return r.json()};
+const S=[
+['Wikipedia',async()=>(await J('https://es.wikipedia.org/w/api.php?action=query&list=search&format=json&origin=*&srlimit=5&srsearch='+e)).query.search.map(x=>({title:x.title,desc:x.snippet.replace(/<[^>]+>/g,''),url:'https://es.wikipedia.org/wiki/'+encodeURIComponent(x.title.replace(/ /g,'_')),type:'Enciclopedia',date:(x.timestamp||'').slice(0,10)}))],
+['Wikidata',async()=>(await J('https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json&origin=*&language=es&limit=5&search='+e)).search.map(x=>({title:x.label,desc:x.description||'',url:x.concepturi,type:'Registro Wikidata',date:''}))],
+['OpenAlex',async()=>(await J('https://api.openalex.org/authors?per-page=5&search='+e)).results.map(x=>({title:x.display_name,desc:x.works_count+' obras'+(x.last_known_institutions&&x.last_known_institutions[0]?' · '+x.last_known_institutions[0].display_name:''),url:x.id,type:'Autor académico',date:''}))],
+['Crossref',async()=>(await J('https://api.crossref.org/works?rows=5&select=title,URL,issued&query.author='+e)).message.items.map(x=>({title:(x.title||['(sin título)'])[0],desc:'Publicación con autor de nombre similar',url:x.URL,type:'Publicación',date:((x.issued&&x.issued['date-parts']&&x.issued['date-parts'][0])||[]).join('-')}))],
+['ORCID',async()=>((await J('https://pub.orcid.org/v3.0/expanded-search/?rows=5&q='+e,{Accept:'application/json'}))['expanded-result']||[]).map(x=>({title:((x['given-names']||'')+' '+(x['family-names']||'')).trim(),desc:(x['institution-name']||[]).join(', '),url:'https://orcid.org/'+x['orcid-id'],type:'Perfil académico',date:''}))],
+['GDELT',async()=>((await J('https://api.gdeltproject.org/api/v2/doc/doc?mode=artlist&maxrecords=10&format=json&sort=datedesc&query='+encodeURIComponent('"'+nm+'" sourcecountry:MX'))).articles||[]).map(a=>({title:a.title,desc:a.domain,url:a.url,type:'Noticia',date:a.seendate.slice(0,4)+'-'+a.seendate.slice(4,6)+'-'+a.seendate.slice(6,8)}))]];
+const res=await Promise.allSettled(S.map(s=>s[1]())),st=[];
+res.forEach((r,i)=>{const n=S[i][0];if(r.status==='fulfilled'){r.value.forEach(x=>AR.push({...x,src:n}));st.push(n+': '+r.value.length);log(n,'Búsqueda de "'+nm+'"',r.value.length?'LIVE':'UNKNOWN',r.value.length+' resultados')}else{st.push(n+': error ('+r.reason.message+')');log(n,'Búsqueda','OFFLINE',r.reason.message)}});
+box.innerHTML='<div class="note">Consultadas automáticamente '+esc(now())+' → '+esc(st.join(' · '))+'. Pueden ser homónimos: confirme la identidad antes de guardar como verificado.</div>'+(AR.length?AR.map((x,i)=>`<div class="card POSIBLE"><h4>${esc(x.title)}</h4><div class="note">${esc(x.src)} · ${esc(x.type)} · ${esc(x.date||'s/f')}</div><div>${esc(x.desc)}</div><div class="row"><button data-o="${i}">Abrir fuente</button><button data-sv="${i}">Guardar hallazgo</button></div></div>`).join(''):'<div class="card">Sin resultados automáticos. Use las fuentes manuales de abajo.</div>')}
+$('#auto-b').onclick=auto;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-o],[data-sv]');if(!b)return;const x=AR[+(b.dataset.o??b.dataset.sv)];if(!x)return;if(b.dataset.o!==undefined)return openU(x.url);const u=safeUrl(x.url);if(!u)return alert('URL no válida.');F.push({id:Date.now(),title:x.title,url:u,src:x.src,doc:x.date,type:x.type,name:x.title,desc:x.desc,query:now(),st:'POSIBLE COINCIDENCIA',com:'Obtenido por búsqueda automática; identidad sin confirmar',m:match(x.title+' '+x.desc)});LS.set('fi_f',F);drawF();log('Hallazgos','Guardado','LIVE',x.title,u)});
+/* hallazgos */
+let F=LS.get('fi_f',[]);const ST=['PENDIENTE','POSIBLE COINCIDENCIA','CORROBORADO','VERIFICADO','DESCARTADO'];
+function match(t){const w=[v('f-full'),v('f-n1'),v('f-a1'),v('f-a2'),v('f-st'),v('f-pr'),v('f-em'),v('f-in')].filter(Boolean),h=t.toLowerCase();return w.filter(x=>h.includes(x.toLowerCase()))}
+$('#h-add').onclick=()=>{const u=safeUrl(v('h-u'));if(!v('h-t')||!u){alert('Se requiere título y una URL http(s) válida.');return}
+F.push({id:Date.now(),title:v('h-t'),url:u,src:v('h-s'),doc:v('h-d'),type:v('h-y'),name:v('h-n'),desc:v('h-x'),query:now(),st:'PENDIENTE',com:'',m:match(v('h-t')+' '+v('h-x')+' '+v('h-n'))});LS.set('fi_f',F);document.querySelectorAll('#p-fd input,#p-fd textarea').forEach(i=>i.value='');drawF();log('Hallazgos','Guardado','LIVE','Hallazgo añadido manualmente',u)};
+function drawF(){$('#fds').innerHTML=F.length?F.map(f=>`<div class="card ${f.st.split(' ')[0]}"><h4>${esc(f.title)}</h4><div class="note">${esc(f.name)} · ${esc(f.type)} · ${esc(f.src)} · doc: ${esc(f.doc||'s/f')} · consultado: ${esc(f.query)}</div><div>${esc(f.desc)}</div><div class="note">Coincidencias con el perfil: ${f.m.length?esc(f.m.join(', ')):'ninguna detectada'}</div><div class="note">Comentario: ${esc(f.com||'—')}</div>
+<div class="row"><select data-s="${f.id}">${ST.map(s=>`<option${s===f.st?' selected':''}>${s}</option>`).join('')}</select><button data-a="open" data-i="${f.id}">Abrir fuente</button><button data-a="copy" data-i="${f.id}">Copiar URL</button><button data-a="com" data-i="${f.id}">Comentar</button><button data-a="cmp" data-i="${f.id}">Comparar</button><button data-a="del" data-i="${f.id}">Eliminar</button></div></div>`).join(''):'<span class="note">Sin hallazgos. Los resultados se añaden manualmente desde las fuentes abiertas; la plataforma no los inventa.</span>'}
+let cmpId=null;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const f=F.find(x=>x.id==b.dataset.i),a=b.dataset.a;if(!f&&a!=='x')return;
+if(a==='open')openU(f.url);
+if(a==='copy')(navigator.clipboard?navigator.clipboard.writeText(f.url):Promise.reject()).then(()=>log('Hallazgos','URL copiada','LIVE',f.title)).catch(()=>prompt('Copie la URL:',f.url));
+if(a==='com'){const c=prompt('Comentario:',f.com);if(c!==null){f.com=c;LS.set('fi_f',F);drawF()}}
+if(a==='del'&&confirm('¿Eliminar hallazgo?')){F=F.filter(x=>x!==f);LS.set('fi_f',F);drawF()}
+if(a==='cmp'){if(!cmpId){cmpId=f.id;alert('Seleccionado. Pulse Comparar en otro hallazgo.')}else{const g=F.find(x=>x.id==cmpId);cmpId=null;alert('COMPARACIÓN\n\nA: '+g.title+'\n'+g.src+' · '+g.doc+'\n'+g.desc+'\nCoincide: '+g.m.join(', ')+'\n\nB: '+f.title+'\n'+f.src+' · '+f.doc+'\n'+f.desc+'\nCoincide: '+f.m.join(', ')+'\n\nEn común: '+g.m.filter(x=>f.m.includes(x)).join(', '))}}});
+document.addEventListener('change',e=>{const s=e.target.dataset.s;if(!s)return;const f=F.find(x=>x.id==s);f.st=e.target.value;LS.set('fi_f',F);drawF()});
+/* informe */
+function report(){const p=['Nombre','Primer nombre','Segundo nombre','Primer apellido','Segundo apellido','Género','Lugar de nacimiento','Estado o municipio','País','Profesión','Empresa','Institución','Alias','Información adicional'],ids=['f-full','f-n1','f-n2','f-a1','f-a2','f-g','f-bp','f-st','f-co','f-pr','f-em','f-in','f-al','f-ex'];
+const g=s=>F.filter(f=>f.st!=='DESCARTADO'&&s.test(f.type)),L=l=>l.length?l.map(f=>`- ${f.title} [${f.st}] (${f.src}, ${f.doc||'s/f'}) ${f.url}`).join('\n'):'- Sin hallazgos registrados.';
+const used=new Set();const sec=(t,s)=>{const l=g(s);l.forEach(x=>used.add(x.id));return t+'\n'+L(l)};
+const r=`FALCÓN INTELLIGENCE\nPERSON INVESTIGATION REPORT\nGenerado: ${now()}\n\nI. Datos introducidos\n`+ids.map((id,i)=>v(id)?`- ${p[i]}: ${v(id)}`:'').filter(Boolean).join('\n')+
+`\n\nII. Identidad y posibles coincidencias\n`+L(F.filter(f=>/POSIBLE|VERIFICADO|CORROBORADO/.test(f.st)))+
+`\n\n${sec('III. Trayectoria profesional pública',/profes|cédula|cedula|trayectoria|linkedin/i)}\n\n${sec('IV. Actividad empresarial documentada',/empresa|registro|mercantil|marca|patente/i)}\n\n${sec('V. Presencia digital pública',/red|perfil|web|digital/i)}\n\n${sec('VI. Publicaciones y noticias',/noticia|publicaci|art[ií]culo/i)}\n\n${sec('VII. Participación institucional',/instituci|gobierno|legisl|cargo/i)}\n\n${sec('VIII. Documentos jurídicos públicos',/sentencia|jur[ií]dic|tribunal|dof|licitaci|contrato/i)}`+
+`\n\nIX. Relaciones empresariales documentadas\n- Solo las respaldadas por los hallazgos de IV; no se infieren relaciones.\n\nX. Hallazgos relevantes (VERIFICADO o CORROBORADO)\n`+L(F.filter(f=>/VERIFICADO|CORROBORADO/.test(f.st)))+
+`\n\nXI. Información no corroborada\n`+L(F.filter(f=>/PENDIENTE|POSIBLE/.test(f.st)))+
+`\n\nXII. Conclusión neutral\nEste informe lista únicamente documentos registrados por el analista con su estado de verificación. No establece delitos, culpabilidad, afiliaciones, patrimonio, domicilio, salud ni relaciones privadas.\n\nXIII. Fuentes y documentos\n`+(F.length?F.map(f=>`- ${f.src||'s/f'}: ${f.url}`).join('\n'):'- Ninguno')+
+`\n\nEnlaces de búsqueda generados (NO consultados automáticamente; la corroboración es manual):\n`+(hist.length?hist.map(h=>`- ${h.t} · ${h.src} · ${h.q} · ${h.url}`).join('\n'):'- Ninguno');$('#rep').textContent=r;return r}
+$('#rg').onclick=report;
+const dl=(n,t,m)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;document.body.appendChild(a);a.click();a.remove()};
+$('#rt').onclick=()=>dl('informe-falcon.txt',report(),'text/plain;charset=utf-8');
+$('#rc').onclick=()=>{const q=s=>'"'+String(s??'').replace(/"/g,'""')+'"';dl('hallazgos-falcon.csv','\ufeff'+['titulo,url,fuente,fecha_documento,tipo,nombre,estado,coincidencias,comentario,fecha_consulta'].concat(F.map(f=>[f.title,f.url,f.src,f.doc,f.type,f.name,f.st,f.m.join('|'),f.com,f.query].map(q).join(','))).join('\n'),'text/csv;charset=utf-8')};
+$('#rp').onclick=()=>{report();window.print()};
+/* expedientes: solo al pulsar guardar */
+let K=LS.get('fi_cases',[]);const ids=['f-full','f-n1','f-n2','f-a1','f-a2','f-g','f-bp','f-st','f-co','f-pr','f-em','f-in','f-al','f-ex'];
+$('#cs').onclick=()=>{const n=v('cn')||v('f-full');if(!n){alert('Indique un nombre de expediente.');return}K.push({id:Date.now(),n,t:now(),inp:ids.map(i=>v(i)),F,hist});LS.set('fi_cases',K);drawK()};
+function drawK(){$('#cases').innerHTML=K.length?K.map(k=>`<div class="card"><b>${esc(k.n)}</b> <span class="note">${esc(k.t)} · ${k.F.length} hallazgos</span><div class="row"><button data-k="load" data-i="${k.id}">Abrir</button><button data-k="del" data-i="${k.id}">Eliminar</button></div></div>`).join(''):'<span class="note">Sin expedientes. Se guardan solo en este navegador y únicamente cuando usted lo pide.</span>'}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(!b)return;const k=K.find(x=>x.id==b.dataset.i);if(b.dataset.k==='load'){ids.forEach((id,i)=>$('#'+id).value=k.inp[i]||'');F=k.F;hist=k.hist||[];LS.set('fi_f',F);drawF();log('Expedientes','Abierto','LIVE',k.n)}else if(confirm('¿Eliminar expediente y sus hallazgos?')){K=K.filter(x=>x!==k);LS.set('fi_cases',K);drawK();sbDel(k.id)}});
+drawF();drawK();
+/* nube opcional: Supabase por REST, con RLS */
+let SB=LS.get('fi_sb',{url:'',key:'',tok:'',email:''});
+const sbs=()=>{$('#sbs').textContent=SB.tok?'Sesión: '+SB.email:'Sin sesión (modo local)';$('#sb-u').value=SB.url;$('#sb-k').value=SB.key};
+async function sbAuth(m){SB.url=v('sb-u').replace(/\/$/,'');SB.key=v('sb-k');const email=v('sb-e'),pw=$('#sb-p').value;if(!SB.url||!SB.key||!email||!pw)return alert('Complete URL, clave anon, correo y contraseña.');
+try{const r=await fetch(SB.url+(m==='up'?'/auth/v1/signup':'/auth/v1/token?grant_type=password'),{method:'POST',headers:{apikey:SB.key,'Content-Type':'application/json'},body:JSON.stringify({email,password:pw})});const j=await r.json();if(!r.ok)throw Error(j.msg||j.error_description||j.message||'HTTP '+r.status);
+if(j.access_token){SB.tok=j.access_token;SB.email=email;log('Nube','Sesión','LIVE',email)}else alert('Cuenta creada. Si Supabase pide confirmar el correo, confírmelo y pulse Entrar.');LS.set('fi_sb',SB);sbs()}catch(e){alert('Error: '+e.message);log('Nube','Acceso','OFFLINE',e.message)}}
+async function sbReq(p,o){if(!SB.tok)throw Error('Inicie sesión primero');const r=await fetch(SB.url+'/rest/v1/'+p,{...o,headers:{apikey:SB.key,Authorization:'Bearer '+SB.tok,'Content-Type':'application/json',...(o&&o.headers)}});if(r.status===401)throw Error('Sesión vencida: pulse Entrar');if(!r.ok)throw Error('HTTP '+r.status+' '+await r.text());return r.status===204?null:r.json().catch(()=>null)}
+$('#sb-in').onclick=()=>sbAuth('in');$('#sb-up').onclick=()=>sbAuth('up');$('#sb-out').onclick=()=>{SB.tok='';LS.set('fi_sb',SB);sbs()};
+$('#sb-push').onclick=async()=>{try{await sbReq('cases?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(K.map(k=>({id:k.id,name:k.n,data:k})))});log('Nube','Subida','LIVE',K.length+' expedientes');alert('Subidos: '+K.length)}catch(e){alert(e.message);log('Nube','Subida','OFFLINE',e.message)}};
+$('#sb-pull').onclick=async()=>{try{const rows=await sbReq('cases?select=id,data')||[];rows.forEach(r=>{if(!K.find(k=>k.id==r.id))K.push(r.data)});LS.set('fi_cases',K);drawK();log('Nube','Descarga','LIVE',rows.length+' expedientes en la nube')}catch(e){alert(e.message);log('Nube','Descarga','OFFLINE',e.message)}};
+async function sbDel(id){if(SB.tok)try{await sbReq('cases?id=eq.'+id,{method:'DELETE'})}catch(e){log('Nube','Borrado','OFFLINE',e.message)}}
+sbs();
+/* actualización por módulo */
+let tm=[];function sched(){tm.forEach(clearInterval);const ms=+$('#iv').value*6e4;tm=[setInterval(wx,ms),setInterval(eq,ms),setInterval(news,Math.max(ms,3e5)),setInterval(air,Math.max(ms,12e4))]}
+$('#iv').onchange=sched;
+wx();eq();news();air();sched();log('Sistema','Inicio','LIVE','Falcón Intelligence iniciado; los módulos sin API aparecen como UNKNOWN u OFFLINE');
+</script></body></html>
