@@ -6,7 +6,7 @@ Dashboard OSINT estático (index.html). Sin servidor propio.
 2. Settings > Pages > Deploy from a branch > main / (root).
 
 ## Conectado
-Clima (Open-Meteo), sismos (USGS), noticias (GDELT), aeronaves cerca de BJX (OpenSky, anónimo),
+Clima (Open-Meteo), sismos (USGS), noticias (GDELT), aeronaves cerca de BJX (adsb.lol y OpenSky),
 búsqueda automática por nombre (Wikipedia, Wikidata, OpenAlex, Crossref, ORCID, GDELT),
 catálogo de 64 fuentes, hallazgos, informe (.txt, CSV, PDF) y expedientes locales.
 
@@ -16,3 +16,6 @@ catálogo de 64 fuentes, hallazgos, informe (.txt, CSV, PDF) y expedientes local
 
 ## No disponible
 Itinerarios de vuelos (requieren API de pago o con clave), cámaras (solo enlaces oficiales), alertas oficiales automáticas.
+
+## Investigar en mis fuentes
+El botón "Investigar en mis fuentes (site:)" busca el nombre en cada portal del catálogo con DuckDuckGo/Bing a través de proxies CORS de terceros (allorigins, corsproxy). Devuelve páginas indexadas, no consultas directas; las búsquedas pasan por esos terceros.
